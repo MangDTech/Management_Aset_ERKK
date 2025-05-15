@@ -1,0 +1,10 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@700&display=swap');
+
+.filament-brand {
+    font-family: 'Poppins', sans-serif; /* Ganti dengan font yang Anda inginkan */
+    font-size: 28px; /* Atur ukuran font */
+    font-weight: 700; /* Ketebalan font */
+    color: #4A90E2; /* Warna teks */
+    text-transform: uppercase; /* Membuat teks menjadi huruf besar */
+    letter-spacing: 1px; /* Memberikan jarak antar huruf */
+}

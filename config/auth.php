@@ -106,6 +106,48 @@ return [
     |
     */
 
+    'guards' => [
+        'web' => [
+            'driver' => 'session',
+            'provider' => 'users',
+        ],
+
+        'api' => [
+            'driver' => 'token',
+            'provider' => 'users',
+            'hash' => false,
+        ],
+
+        'atasan' => [
+            'driver' => 'session',
+            'provider' => 'atasans',
+        ],
+
+        'peminjam' => [
+            'driver' => 'session',
+            'provider' => 'peminjams',
+        ],
+    ],
+
+
+   'providers' => [
+        'users' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\User::class,
+        ],
+
+        'atasans' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Atasan::class,
+        ],
+
+        'peminjams' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Peminjam::class,
+        ],
+    ],
+
+
     'password_timeout' => 10800,
 
 ];
