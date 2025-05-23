@@ -7,6 +7,11 @@ use App\Models\Peminjam;
 use App\Models\Atasan;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\OtpRegisterController;
+use App\Models\Barang;
+use App\Http\Controllers\BarangPeminjamanController;
+use App\Http\Controllers\BarangController;
+use App\Http\Controllers\KbarangController;
+use App\Http\Controllers\BarangPengembalianController;
 
 
 
@@ -33,3 +38,17 @@ Route::post('/login', [AuthController::class, 'login']);
 
 Route::post('/register', [OtpRegisterController::class, 'register']);
 Route::post('/verify-otp', [OtpRegisterController::class, 'verifyOtp']);
+
+Route::get('/statistik-barang', function () {
+    return response()->json([
+        'totalBarang' => Barang::sum('jumlah_barang'),
+    ]);
+});
+
+Route::post('/peminjaman', [BarangPeminjamanController::class, 'store']);
+Route::get('/peminjaman', [BarangPeminjamanController::class, 'index']);
+Route::get('/barang', [BarangController::class, 'index']);
+Route::get('/kbarang', [KbarangController::class, 'index']);
+
+Route::post('/pengembalian', [BarangPengembalianController::class, 'store']);
+Route::get('/pengembalian', [BarangPengembalianController::class, 'index']);
