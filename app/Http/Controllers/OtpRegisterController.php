@@ -39,14 +39,14 @@ class OtpRegisterController extends Controller
         ]);
 
         // Kirim OTP ke email
-        Mail::raw("Hallo Mohon Untuk tidak di balas pesan dari MA-ERKK System ,Kode OTP Anda adalah: $otpCode", function ($message) use ($peminjam) {
+        Mail::raw("Pesan dari MA-ERKK System ,mohon tidak membagikan kode ini kepada siapapun! Kode OTP Anda adalah: $otpCode", function ($message) use ($peminjam) {
             $message->to($peminjam->email)
                     ->subject('Kode OTP Anda');
         });
 
         return response()->json([
             'success' => true,
-            'message' => 'Registrasi berhasil. Kode OTP telah dikirim ke email Anda.',
+            'message' => 'Mohon isi dengan Kode OTP telah dikirim ke email Anda.',
         ]);
     }
 
