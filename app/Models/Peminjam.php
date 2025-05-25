@@ -23,6 +23,7 @@ class Peminjam extends Authenticatable
         $this->attributes['password'] = Hash::make($value);
     }
 
+    
     public function otps()
     {
         return $this->hasMany(Otp::class);

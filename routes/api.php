@@ -12,6 +12,7 @@ use App\Http\Controllers\BarangPeminjamanController;
 use App\Http\Controllers\BarangController;
 use App\Http\Controllers\KbarangController;
 use App\Http\Controllers\BarangPengembalianController;
+use App\Http\Controllers\RatingController;
 
 
 
@@ -52,3 +53,8 @@ Route::get('/kbarang', [KbarangController::class, 'index']);
 
 Route::post('/pengembalian', [BarangPengembalianController::class, 'store']);
 Route::get('/pengembalian', [BarangPengembalianController::class, 'index']);
+
+// Route untuk rating
+
+Route::post('/rating/check', [RatingController::class, 'check']);
+Route::post('/rating', [RatingController::class, 'store']);
