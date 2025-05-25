@@ -48,8 +48,10 @@ class BarangPeminjamanResource extends Resource
                 Tables\Columns\ImageColumn::make('barang.image')
                     ->label('Gambar')
                     ->disk('public'),
-                Tables\Columns\TextColumn::make('peminjam.name')->label('Nama Peminjam'),
-                Tables\Columns\TextColumn::make('barang.name')->label('Nama Barang'),
+                Tables\Columns\TextColumn::make('peminjam.name')->label('Nama Peminjam')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('barang.name')->label('Nama Barang')
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('barang.kode_barang')->label('Kode Barang'),
                 Tables\Columns\TextColumn::make('kbarang.name')->label('Kualitas Barang'),
                 Tables\Columns\TextColumn::make('jumlah'),

@@ -1,12 +1,15 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 
 class BarangPeminjaman extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
 
     protected $table = 'barang_peminjaman';
 
@@ -20,6 +23,7 @@ class BarangPeminjaman extends Model
         'status',
     ];
 
+
     public function peminjam()
     {
         return $this->belongsTo(Peminjam::class);
@@ -29,8 +33,16 @@ class BarangPeminjaman extends Model
     {
         return $this->belongsTo(Barang::class);
     }
+
     public function kbarang()
     {
-        return $this->belongsTo(\App\Models\Kbarang::class);
+        return $this->belongsTo(Kbarang::class);
+    }
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logAll()
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
     }
 }

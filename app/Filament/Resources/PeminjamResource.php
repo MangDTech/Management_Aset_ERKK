@@ -79,6 +79,7 @@ class PeminjamResource extends Resource
             'index' => Pages\ListPeminjams::route('/'),
             'create' => Pages\CreatePeminjam::route('/create'),
             'edit' => Pages\EditPeminjam::route('/{record}/edit'),
+            
         ];
     }    
 }

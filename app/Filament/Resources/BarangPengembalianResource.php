@@ -36,8 +36,10 @@ class BarangPengembalianResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('peminjam.name')->label('Nama Peminjam'),
-                Tables\Columns\TextColumn::make('barang.name')->label('Nama Barang'),
+                Tables\Columns\TextColumn::make('peminjam.name')->label('Nama Peminjam')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('barang.name')->label('Nama Barang')
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('kbarang.name')->label('Kualitas Barang'),
                 Tables\Columns\TextColumn::make('jumlah'),
                 Tables\Columns\TextColumn::make('tanggal_pinjam'),
