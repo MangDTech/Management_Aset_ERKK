@@ -37,4 +37,10 @@ class Barang extends Model
             ->dontSubmitEmptyLogs();
     }
 
+    public function maintenances()
+        {
+            return $this->hasMany(BarangMaintenance::class);
+        }
+
+
 }
