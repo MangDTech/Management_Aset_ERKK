@@ -9,7 +9,6 @@ use Filament\Resources\Form;
 use Filament\Resources\Resource;
 use Filament\Resources\Table;
 use Filament\Tables;
-use Illuminate\Database\Eloquent\Builder;
 
 class BarangMaintenanceResource extends Resource
 {
@@ -96,7 +95,6 @@ class BarangMaintenanceResource extends Resource
                         $record->tanggal_selesai = now();
                         $record->save();
 
-                        // Tambahkan jumlah ke stok barang
                         $barang = $record->barang;
                         if ($barang) {
                             $barang->jumlah_barang += $record->jumlah;
