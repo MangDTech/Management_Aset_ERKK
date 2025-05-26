@@ -80,6 +80,9 @@ class BarangMaintenanceController extends Controller
 
     public function index()
     {
-        return BarangMaintenance::with('barang')->get();
+        return response()->json([
+            'success' => true,
+            'data' => BarangMaintenance::with('barang')->get()
+        ]);
     }
 }

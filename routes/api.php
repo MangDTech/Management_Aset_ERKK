@@ -62,3 +62,5 @@ Route::post('/rating', [RatingController::class, 'store']);
 // untuk maintenance barang
 Route::post('/barang-maintenance', [BarangMaintenanceController::class, 'store']);
 Route::post('/barang-maintenance/{id}/selesai', [BarangMaintenanceController::class, 'selesai']);
+
+Route::get('/maintenance', [BarangMaintenanceController::class, 'index']);
