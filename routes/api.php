@@ -13,6 +13,7 @@ use App\Http\Controllers\BarangController;
 use App\Http\Controllers\KbarangController;
 use App\Http\Controllers\BarangPengembalianController;
 use App\Http\Controllers\RatingController;
+use App\Http\Controllers\BarangMaintenanceController;
 
 
 
@@ -58,3 +59,8 @@ Route::get('/pengembalian', [BarangPengembalianController::class, 'index']);
 
 Route::post('/rating/check', [RatingController::class, 'check']);
 Route::post('/rating', [RatingController::class, 'store']);
+// untuk maintenance barang
+Route::post('/barang-maintenance', [BarangMaintenanceController::class, 'store']);
+Route::post('/barang-maintenance/{id}/selesai', [BarangMaintenanceController::class, 'selesai']);
+
+Route::get('/maintenance', [BarangMaintenanceController::class, 'index']);

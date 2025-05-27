@@ -8,44 +8,44 @@ use Carbon\Carbon;
 
 class PeminjamanChart extends BarChartWidget
 {
-    protected static ?string $heading = 'Grafik History Peminjaman per Bulan';
+    protected static ?string $heading = 'Grafik Barang yang Dikembalikan per Bulan';
 
     protected function getData(): array
     {
-        // Ambil data 12 bulan terakhir (bulan berjalan paling depan)
-       $rawData = DB::table('barang_pengembalian')
-            ->selectRaw("DATE_FORMAT(tanggal_pengembalian, '%Y-%m') as bulan, SUM(jumlah) as total_barang")
-            ->where('tanggal_pengembalian', '>=', Carbon::now()->subMonths(11)->startOfMonth()->format('Y-m-d'))
-            ->groupBy('bulan')
-            ->orderBy('bulan')
-            ->pluck('total_barang', 'bulan')
-            ->toArray();
+        // Ambil data dari tabel barang_pengembalian untuk 12 bulan terakhir
+        $data = DB::table('barang_pengembalian')
+            ->select('tanggal_pengembalian', 'jumlah')
+            ->whereNotNull('tanggal_pengembalian')
+            ->where('tanggal_pengembalian', '>=', Carbon::now()->subMonths(11)->startOfMonth())
+            ->get();
 
-        // Siapkan array bulan 12 bulan terakhir, bulan terbaru di depan
+        // Siapkan array bulan dari 12 bulan terakhir dengan nilai default 0
         $months = [];
-        $startMonth = Carbon::now()->startOfMonth();
-
+        $startMonth = Carbon::now()->subMonths(11)->startOfMonth();
         for ($i = 0; $i < 12; $i++) {
-            $month = $startMonth->copy()->subMonths($i);
-            $months[$month->format('Y-m')] = 0;
+            $month = $startMonth->copy()->addMonths($i)->format('Y-m');
+            $months[$month] = 0;
         }
 
-        $months = array_reverse($months, true);
-
-        foreach ($rawData as $bulan => $total) {
+        // Hitung total jumlah barang yang dikembalikan per bulan
+        foreach ($data as $item) {
+            $bulan = Carbon::parse($item->tanggal_pengembalian)->format('Y-m');
             if (isset($months[$bulan])) {
-                $months[$bulan] = (int)$total;
+                $months[$bulan] += (int) $item->jumlah;
             }
         }
 
-        // Labels sederhana, bisa pakai Y-m juga kalau mau
-        $labels = array_map(fn($b) => Carbon::createFromFormat('Y-m', $b)->translatedFormat('F Y'), array_keys($months));
+        // Buat label bulan untuk grafik dalam format "Mei 2025" (bisa diterjemahkan)
+        $labels = array_map(
+            fn($month) => Carbon::createFromFormat('Y-m', $month)->translatedFormat('F Y'),
+            array_keys($months)
+        );
 
         return [
             'datasets' => [[
-                'label' => 'Jumlah Peminjaman',
+                'label' => 'Jumlah Barang Dikembalikan',
                 'data' => array_values($months),
-                'backgroundColor' => 'rgba(243, 139, 49, 0.7)',
+                'backgroundColor' => 'rgba(56, 189, 248, 0.7)', // Warna biru muda
             ]],
             'labels' => $labels,
         ];

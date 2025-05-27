@@ -1,8 +1,10 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\BarangPeminjaman;
+use App\Models\Barang;
 
 class BarangPeminjamanController extends Controller
 {
@@ -16,6 +18,22 @@ class BarangPeminjamanController extends Controller
             'tanggal_pengembalian' => 'nullable|date|after_or_equal:tanggal_pinjam',
         ]);
 
+        $barang = Barang::find($request->barang_id);
+
+        if (!$barang) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Barang tidak ditemukan.'
+            ], 404);
+        }
+
+        if ($request->jumlah > $barang->jumlah_barang) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Jumlah barang tidak cukup persediaan.'
+            ], 400);
+        }
+
         $peminjaman = BarangPeminjaman::create([
             'peminjam_id' => $request->peminjam_id,
             'barang_id' => $request->barang_id,
@@ -26,8 +44,13 @@ class BarangPeminjamanController extends Controller
             'status' => 'pending',
         ]);
 
+        // Kurangi stok barang
+        $barang->jumlah_barang -= $request->jumlah;
+        $barang->save();
+
         return response()->json([
             'success' => true,
+            'message' => 'Peminjaman berhasil disimpan.',
             'data' => $peminjaman,
         ]);
     }
