@@ -9,6 +9,7 @@ use Filament\Resources\Form;
 use Filament\Resources\Resource;
 use Filament\Resources\Table;
 use Filament\Tables;
+use Illuminate\Database\Eloquent\Builder;
 
 class BarangMaintenanceResource extends Resource
 {
@@ -18,6 +19,16 @@ class BarangMaintenanceResource extends Resource
     protected static ?string $navigationLabel = 'Maintenance Barang';
     protected static ?string $navigationGroup = 'Maintenance Info';
     protected static ?int $navigationSort = 3;
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->orderByRaw("CASE 
+                WHEN status = 'Proses' THEN 1 
+                WHEN status = 'Selesai' THEN 2 
+                ELSE 3 END")
+            ->latest(); 
+    }
 
     public static function form(Form $form): Form
     {

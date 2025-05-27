@@ -21,6 +21,17 @@ class BarangPeminjamanResource extends Resource
     protected static ?string $navigationGroup = 'Peminjaman dan Pengembalian';
     protected static ?string $navigationLabel = 'Daftar Peminjaman Barang';
     protected static ?string $pluralModelLabel = 'Daftar Pinjaman User';
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->orderByRaw("CASE 
+                WHEN status = 'proses' THEN 1 
+                WHEN status = 'disetujui' THEN 2 
+                WHEN status = 'ditolak' THEN 3 
+                ELSE 4 END")
+            ->latest(); 
+    }
     public static function form(Form $form): Form
     {
         return $form

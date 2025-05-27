@@ -23,6 +23,16 @@ class BarangPengembalianResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-arrow-right';
     protected static ?string $navigationGroup = 'Peminjaman dan Pengembalian';
     protected static ?string $navigationLabel = 'Daftar Pengembalian Barang';
+    
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->orderByRaw("CASE 
+                WHEN status != 'dikembalikan' THEN 1 
+                WHEN status = 'dikembalikan' THEN 2 
+                ELSE 3 END")
+            ->latest(); 
+    }
 
     public static function form(Form $form): Form
     {
