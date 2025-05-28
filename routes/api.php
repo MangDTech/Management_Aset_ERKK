@@ -14,7 +14,9 @@ use App\Http\Controllers\KbarangController;
 use App\Http\Controllers\BarangPengembalianController;
 use App\Http\Controllers\RatingController;
 use App\Http\Controllers\BarangMaintenanceController;
-
+use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\Api\DendaController;
+use App\Http\Controllers\Api\MidtransController;
 
 
 /*
@@ -64,3 +66,14 @@ Route::post('/barang-maintenance', [BarangMaintenanceController::class, 'store']
 Route::post('/barang-maintenance/{id}/selesai', [BarangMaintenanceController::class, 'selesai']);
 
 Route::get('/maintenance', [BarangMaintenanceController::class, 'index']);
+
+// routes/api.php
+Route::post('/payment/generate-token', [PaymentController::class, 'generateSnapToken']);
+Route::post('/payment/callback', [PaymentController::class, 'handleCallback']);
+
+// Denda routes
+Route::post('/denda', [DendaController::class, 'store']);
+// routes/api.php
+Route::get('/denda/user/{id}', [DendaController::class, 'getUserDenda']);
+
+Route::post('/midtrans/handle', [\App\Http\Controllers\Api\MidtransController::class, 'handle']);
