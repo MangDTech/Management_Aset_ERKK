@@ -17,7 +17,7 @@ use App\Http\Controllers\BarangMaintenanceController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\Api\DendaController;
 use App\Http\Controllers\Api\MidtransController;
-
+use App\Http\Controllers\Api\HistoryDendaController;
 
 /*
 |--------------------------------------------------------------------------
@@ -79,4 +79,5 @@ Route::get('/denda/user/{id}', [DendaController::class, 'getUserDenda']);
 Route::post('midtrans/notification', [MidtransController::class, 'handle'])
     ->withoutMiddleware(['throttle:api', 'auth:api']);
 
-Route::get('/denda/{id}', [MidtransController::class, 'getDendaById']);
+Route::get('/history-denda/{userId}', [HistoryDendaController::class, 'index']);
+

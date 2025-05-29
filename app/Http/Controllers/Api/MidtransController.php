@@ -6,6 +6,7 @@ use App\Models\Denda;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Midtrans\Config;
+use App\Models\HistoryDenda;
 
 class MidtransController extends Controller
 {
@@ -43,7 +44,7 @@ class MidtransController extends Controller
                 'isProduction' => Config::$isProduction
             ]);
         } catch (\Exception $e) {
-            \Log::critical('Midtrans Config Failed: '.$e->getMessage());
+            \Log::critical('Midtrans Config Failed: ' . $e->getMessage());
             throw $e;
         }
     }
@@ -91,7 +92,7 @@ class MidtransController extends Controller
     protected function validateSignatureKey(array $payload)
     {
         $serverKey = env('MIDTRANS_SERVER_KEY');
-        $expectedSignature = hash('sha512', 
+        $expectedSignature = hash('sha512',
             $payload['order_id'] .
             $payload['status_code'] .
             $payload['gross_amount'] .
@@ -107,7 +108,6 @@ class MidtransController extends Controller
         ]);
     }
 
-
     protected function updateDendaStatus($orderId, $status, $fraudStatus, $paymentType)
     {
         try {
@@ -120,7 +120,7 @@ class MidtransController extends Controller
             $denda = Denda::findOrFail($dendaId);
             $originalStatus = $denda->status;
 
-            $newStatus = match($status) {
+            $newStatus = match ($status) {
                 'capture' => ($paymentType === 'credit_card' && $fraudStatus !== 'accept') ? 'pending' : 'lunas',
                 'settlement' => 'lunas',
                 'pending' => 'pending',
@@ -137,6 +137,21 @@ class MidtransController extends Controller
                     'old_status' => $originalStatus,
                     'new_status' => $newStatus
                 ]);
+
+                // ⬇️ Tambahan: jika lunas, simpan ke history_dendas
+                if ($newStatus === 'lunas') {
+                    HistoryDenda::create([
+                        'denda_id' => $denda->id,
+                        'status' => $newStatus,
+                        'payment_type' => $paymentType,
+                        'order_id' => $orderId,
+                    ]);
+
+                    \Log::info('History Denda Saved', [
+                        'denda_id' => $denda->id,
+                        'order_id' => $orderId
+                    ]);
+                }
             }
 
             return $this->sendResponse('Denda status updated', [
@@ -177,16 +192,26 @@ class MidtransController extends Controller
         ]);
     }
 
-    public function getDendaById($id)
-    {
-        try {
-            $denda = Denda::findOrFail($id);
-            return $this->sendResponse('Denda detail fetched successfully', $denda);
-        } catch (\Exception $e) {
-            \Log::error('Failed to fetch denda detail', [
-                'error' => $e->getMessage()
-            ]);
-            return $this->sendError('Denda not found', 404);
-        }
-    }
+    // history denda end point api 
+    // public function getHistoryDenda($userId)
+    // {
+    //     try {
+    //         // Ambil semua denda yang dimiliki user
+    //         $dendas = Denda::where('user_id', $userId)->pluck('id');
+
+    //         // Ambil history berdasarkan denda_id yang dimiliki user
+    //         $history = HistoryDenda::whereIn('denda_id', $dendas)
+    //             ->orderBy('created_at', 'desc')
+    //             ->get();
+
+    //         return $this->sendResponse('History Denda fetched successfully', $history);
+    //     } catch (\Exception $e) {
+    //         \Log::error('Fetch History Denda Failed', [
+    //             'user_id' => $userId,
+    //             'error' => $e->getMessage()
+    //         ]);
+
+    //         return $this->sendError('Failed to fetch history denda', 500);
+    //     }
+    // }
 }

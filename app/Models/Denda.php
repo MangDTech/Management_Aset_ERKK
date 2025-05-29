@@ -18,6 +18,11 @@ class Denda extends Model
         return $this->belongsTo(Peminjam::class);
     }
 
+    public function history()
+    {
+        return $this->hasMany(HistoryDenda::class);
+    }
+
     protected static function booted()
     {
         static::creating(function ($denda) {
