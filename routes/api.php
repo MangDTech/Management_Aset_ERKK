@@ -76,4 +76,7 @@ Route::post('/denda', [DendaController::class, 'store']);
 // routes/api.php
 Route::get('/denda/user/{id}', [DendaController::class, 'getUserDenda']);
 
-Route::post('/midtrans/handle', [\App\Http\Controllers\Api\MidtransController::class, 'handle']);
+Route::post('midtrans/notification', [MidtransController::class, 'handle'])
+    ->withoutMiddleware(['throttle:api', 'auth:api']);
+
+Route::get('/denda/{id}', [MidtransController::class, 'getDendaById']);

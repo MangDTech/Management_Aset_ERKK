@@ -6,57 +6,187 @@ use App\Models\Denda;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Midtrans\Config;
-use Midtrans\Notification;
 
 class MidtransController extends Controller
 {
+    protected static $midtransInitialized = false;
+
+    public function __construct()
+    {
+        if (!self::$midtransInitialized) {
+            $this->initializeMidtrans();
+            self::$midtransInitialized = true;
+        }
+    }
+
+    protected function initializeMidtrans()
+    {
+        try {
+            $serverKey = env('MIDTRANS_SERVER_KEY');
+            if (empty($serverKey)) {
+                throw new \Exception('Midtrans server key is not set in .env');
+            }
+
+            Config::$serverKey = $serverKey;
+            Config::$isProduction = env('MIDTRANS_IS_PRODUCTION', false);
+            Config::$isSanitized = true;
+            Config::$is3ds = true;
+            Config::$curlOptions = [
+                CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                CURLOPT_TIMEOUT => 30,
+                CURLOPT_SSL_VERIFYHOST => 0,
+                CURLOPT_SSL_VERIFYPEER => 0
+            ];
+
+            \Log::debug('Midtrans Config Loaded', [
+                'serverKey' => substr($serverKey, 0, 6) . '...' . substr($serverKey, -4),
+                'isProduction' => Config::$isProduction
+            ]);
+        } catch (\Exception $e) {
+            \Log::critical('Midtrans Config Failed: '.$e->getMessage());
+            throw $e;
+        }
+    }
+
     public function handle(Request $request)
     {
-        // Set konfigurasi Midtrans
-        Config::$serverKey = config('services.midtrans.server_key');
-        Config::$isProduction = config('services.midtrans.is_production');
-        Config::$isSanitized = true;
-        Config::$is3ds = true;
+        \Log::info('Midtrans Notification Received', ['ip' => $request->ip()]);
 
         try {
-            $notification = new Notification();
-            
-            $transaction = $notification->transaction_status;
-            $orderId = $notification->order_id;
-            $fraud = $notification->fraud_status;
+            $payload = $request->all();
 
-            // Ambil ID denda dari order_id (format: DND-{id}-{timestamp})
-            $parts = explode('-', $orderId);
-            $dendaId = $parts[1] ?? null;
+            \Log::debug('Notification Payload', [
+                'order_id' => $payload['order_id'] ?? null,
+                'status' => $payload['transaction_status'] ?? null,
+                'type' => $payload['payment_type'] ?? null
+            ]);
 
-            if (!$dendaId) {
-                return response()->json(['message' => 'Invalid order ID'], 400);
+            // Validasi minimal
+            if (!isset($payload['transaction_status']) || !isset($payload['order_id'])) {
+                throw new \Exception('Invalid notification payload');
             }
 
-            $denda = Denda::find($dendaId);
-
-            if (!$denda) {
-                return response()->json(['message' => 'Denda tidak ditemukan'], 404);
+            // Proses order DND
+            if (strpos($payload['order_id'], 'DND-') === 0) {
+                return $this->updateDendaStatus(
+                    $payload['order_id'],
+                    $payload['transaction_status'],
+                    $payload['fraud_status'] ?? null,
+                    $payload['payment_type'] ?? null
+                );
             }
 
-            // Handle status transaksi
-            if ($transaction == 'capture') {
-                if ($fraud == 'challenge') {
-                    $denda->update(['status' => 'pending']);
-                } else if ($fraud == 'accept') {
-                    $denda->update(['status' => 'lunas']);
-                }
-            } else if ($transaction == 'settlement') {
-                $denda->update(['status' => 'lunas']);
-            } else if ($transaction == 'pending') {
-                $denda->update(['status' => 'pending']);
-            } else if ($transaction == 'deny' || $transaction == 'cancel' || $transaction == 'expire') {
-                $denda->update(['status' => 'gagal']);
-            }
+            return $this->sendResponse('Notification received but no action taken');
 
-            return response()->json(['message' => 'Notifikasi diproses'], 200);
         } catch (\Exception $e) {
-            return response()->json(['message' => 'Error processing notification: ' . $e->getMessage()], 500);
+            \Log::error('Notification Error', [
+                'error' => $e->getMessage(),
+                'payload' => $request->all()
+            ]);
+
+            return $this->sendError($e->getMessage(), 500);
+        }
+    }
+
+    protected function validateSignatureKey(array $payload)
+    {
+        $serverKey = env('MIDTRANS_SERVER_KEY');
+        $expectedSignature = hash('sha512', 
+            $payload['order_id'] .
+            $payload['status_code'] .
+            $payload['gross_amount'] .
+            $serverKey
+        );
+
+        if (!isset($payload['signature_key']) || $payload['signature_key'] !== $expectedSignature) {
+            throw new \Exception('Invalid signature key.');
+        }
+
+        \Log::debug('Signature Key Validated', [
+            'order_id' => $payload['order_id']
+        ]);
+    }
+
+
+    protected function updateDendaStatus($orderId, $status, $fraudStatus, $paymentType)
+    {
+        try {
+            $dendaId = explode('-', $orderId)[1] ?? null;
+
+            if (!$dendaId || !is_numeric($dendaId)) {
+                throw new \Exception("Invalid Denda ID in order_id: {$orderId}");
+            }
+
+            $denda = Denda::findOrFail($dendaId);
+            $originalStatus = $denda->status;
+
+            $newStatus = match($status) {
+                'capture' => ($paymentType === 'credit_card' && $fraudStatus !== 'accept') ? 'pending' : 'lunas',
+                'settlement' => 'lunas',
+                'pending' => 'pending',
+                'deny', 'cancel', 'expire' => 'gagal',
+                default => $originalStatus
+            };
+
+            if ($newStatus !== $originalStatus) {
+                $denda->status = $newStatus;
+                $denda->save();
+
+                \Log::info('Denda Status Updated', [
+                    'denda_id' => $denda->id,
+                    'old_status' => $originalStatus,
+                    'new_status' => $newStatus
+                ]);
+            }
+
+            return $this->sendResponse('Denda status updated', [
+                'denda_id' => $denda->id,
+                'status' => $newStatus
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Denda Update Failed', [
+                'order_id' => $orderId,
+                'error' => $e->getMessage()
+            ]);
+            throw $e;
+        }
+    }
+
+    protected function sendResponse($message, $data = [])
+    {
+        return response()->json([
+            'status' => 'success',
+            'message' => $message,
+            'data' => $data,
+            'timestamp' => now()->toDateTimeString()
+        ], 200, [
+            'Content-Type' => 'application/json',
+            'Connection' => 'close'
+        ]);
+    }
+
+    protected function sendError($message, $statusCode)
+    {
+        return response()->json([
+            'status' => 'error',
+            'message' => $message,
+            'timestamp' => now()->toDateTimeString()
+        ], $statusCode, [
+            'Content-Type' => 'application/json',
+            'Connection' => 'close'
+        ]);
+    }
+
+    public function getDendaById($id)
+    {
+        try {
+            $denda = Denda::findOrFail($id);
+            return $this->sendResponse('Denda detail fetched successfully', $denda);
+        } catch (\Exception $e) {
+            \Log::error('Failed to fetch denda detail', [
+                'error' => $e->getMessage()
+            ]);
+            return $this->sendError('Denda not found', 404);
         }
     }
 }

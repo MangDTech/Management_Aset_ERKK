@@ -151,45 +151,45 @@ protected function generateValidSnapToken(Denda $denda)
 }
 
     // Endpoint untuk handle notifikasi dari Midtrans
-    public function handleNotification(Request $request)
-    {
-        try {
-            $notif = new \Midtrans\Notification();
+    // public function handleNotification(Request $request)
+    // {
+    //     try {
+    //         $notif = new \Midtrans\Notification();
             
-            $transaction = $notif->transaction_status;
-            $type = $notif->payment_type;
-            $orderId = $notif->order_id;
-            $fraud = $notif->fraud_status;
+    //         $transaction = $notif->transaction_status;
+    //         $type = $notif->payment_type;
+    //         $orderId = $notif->order_id;
+    //         $fraud = $notif->fraud_status;
 
-            // Extract denda ID dari order_id (DND-1-123456)
-            $dendaId = explode('-', $orderId)[1];
-            $denda = Denda::findOrFail($dendaId);
+    //         // Extract denda ID dari order_id (DND-1-123456)
+    //         $dendaId = explode('-', $orderId)[1];
+    //         $denda = Denda::findOrFail($dendaId);
 
-            if ($transaction == 'capture') {
-                if ($type == 'credit_card') {
-                    if ($fraud == 'challenge') {
-                        $denda->status = 'pending';
-                    } else {
-                        $denda->status = 'lunas';
-                    }
-                }
-            } elseif ($transaction == 'settlement') {
-                $denda->status = 'lunas';
-            } elseif ($transaction == 'pending') {
-                $denda->status = 'pending';
-            } elseif ($transaction == 'deny' || 
-                     $transaction == 'expire' || 
-                     $transaction == 'cancel') {
-                $denda->status = 'gagal';
-            }
+    //         if ($transaction == 'capture') {
+    //             if ($type == 'credit_card') {
+    //                 if ($fraud == 'challenge') {
+    //                     $denda->status = 'pending';
+    //                 } else {
+    //                     $denda->status = 'lunas';
+    //                 }
+    //             }
+    //         } elseif ($transaction == 'settlement') {
+    //             $denda->status = 'lunas';
+    //         } elseif ($transaction == 'pending') {
+    //             $denda->status = 'pending';
+    //         } elseif ($transaction == 'deny' || 
+    //                  $transaction == 'expire' || 
+    //                  $transaction == 'cancel') {
+    //             $denda->status = 'gagal';
+    //         }
 
-            $denda->save();
+    //         $denda->save();
 
-            return response()->json(['status' => 'success']);
+    //         return response()->json(['status' => 'success']);
 
-        } catch (\Exception $e) {
-            Log::error('Notification handler error: ' . $e->getMessage());
-            return response()->json(['status' => 'error'], 500);
-        }
-    }
+    //     } catch (\Exception $e) {
+    //         Log::error('Notification handler error: ' . $e->getMessage());
+    //         return response()->json(['status' => 'error'], 500);
+    //     }
+    // }
 }
